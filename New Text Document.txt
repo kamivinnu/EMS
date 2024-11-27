@@ -1,0 +1,651 @@
+Django project employee_management
+
+employee_management/urls.py
+
+from django.contrib import admin
+from django.urls import path, include
+from django.contrib.auth import views as auth_views
+from employees.views import employee_details, download_details, custom_login, user_profile, personal_details, account_details, work_experience, download_profile
+from employees.views import CustomLoginView, holidays_calendar
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('login/', CustomLoginView.as_view(template_name='registration/login.html'), name='login'),
+    # path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('employee/', employee_details, name='employee_details'),
+    path('employee/download/', download_details, name='download_details'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),  # Logout view
+    path('password_change/', auth_views.PasswordChangeView.as_view(template_name='registration/password_change.html'), name='password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='registration/password_change_done.html'), name='password_change_done'),
+    path('login/', custom_login, name='login'),
+
+    path('profile/', user_profile, name='user_profile'),
+    path('personal-details/', personal_details, name='personal_details'),
+    path('account-details/', account_details, name='account_details'),
+    path('work-experience/', work_experience, name='work_experience'),
+    path('download-profile/', download_profile, name='download_profile'),
+]
+	
+
+
+Django app employee_portal
+
+1. models.py:
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+# Create your models here.
+
+class Employee(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # Link to Django user
+    employee_name = models.CharField(max_length=100, blank=True, null=True)
+    first_name = models.CharField(max_length=100)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
+    last_name = models.CharField(max_length=100, blank=True, null=True)
+    gender = models.CharField(max_length=10)
+    fathers_name = models.CharField(max_length=100)
+    personal_email = models.EmailField()
+    work_email = models.EmailField()
+    mobile_number = models.CharField(max_length=15)
+    date_of_joining = models.DateField()
+    date_of_birth = models.DateField()
+    age = models.IntegerField(blank=True, null=True)
+    employment_type = models.CharField(max_length=50, blank=True, null=True)
+    employee_id = models.CharField(max_length=20, unique=True)
+    designation = models.CharField(max_length=100)
+    department = models.CharField(max_length=100)
+    work_location = models.CharField(max_length=100)
+    enable_portal_access = models.BooleanField(default=False, blank=True, null=True)
+    aadhar_card = models.CharField(max_length=20)
+    pan = models.CharField(max_length=10, blank=True, null=True)
+    residential_address = models.TextField(blank=True, null=True)
+    pf_account_number = models.CharField(max_length=20)
+    annual_ctc = models.DecimalField(max_digits=10, decimal_places=2)
+    account_holder_name = models.CharField(max_length=100)
+    bank_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=20)
+    ifsc = models.CharField(max_length=11)
+    account_type = models.CharField(max_length=20)
+    total_work_experience = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    dat_work_experience = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    skill_set = models.TextField(blank=True, null=True)
+    passport_number = models.CharField(max_length=20, default=True, null=True)
+    passport_expiry_date = models.DateField(default=True, null=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.employee_id})"
+
+2. admin.py
+
+from django.contrib import admin
+
+# Register your models here.
+from .models import Employee
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ['first_name', 'last_name', 'employee_id', 'department', 'work_location']
+    search_fields = ['first_name', 'last_name', 'employee_id', 'department']
+
+3. apps.py
+
+from django.apps import AppConfig
+
+
+class EmployeesConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'employees'
+
+4. forms.py
+
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
+
+class CustomLoginForm(AuthenticationForm):
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'User ID'
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Password'
+        })
+    )
+
+5. views.py
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Employee
+from django.http import HttpResponse
+import pandas as pd
+from django.contrib import messages  # Add this to display messages
+
+from django.contrib.auth import authenticate, login
+# from django.shortcuts import render, redirect
+from django.contrib.auth.forms import AuthenticationForm
+
+from django.contrib.auth.views import LoginView
+from .forms import CustomLoginForm
+
+from django.utils import timezone
+
+@login_required
+def employee_details(request):
+    try:
+        employee = Employee.objects.get(user=request.user)
+        return render(request, 'user_profile.html', {'employee': employee})
+    except Employee.DoesNotExist:
+        return HttpResponse("No employee data found for this user", status=404)
+
+@login_required
+def download_details(request):
+    try:
+        employee = Employee.objects.get(user=request.user)
+        # Convert employee data to a dictionary
+        employee_data = {
+            'Employee Name': employee.employee_name,
+            
+            'First Name': employee.first_name,
+            'Middle Name': employee.middle_name,
+            'Last Name': employee.last_name,
+            'Gender': employee.gender,
+            'Father\'s Name': employee.fathers_name,
+            'Personal Email': employee.personal_email,
+            'Work Email': employee.work_email,
+            'Mobile Number': employee.mobile_number,
+            'Date of Joining': employee.date_of_joining,
+            'Date of Birth': employee.date_of_birth,
+            'Age': employee.age,
+            'Employment Type': employee.employment_type,
+            'Employee ID': employee.employee_id,
+            'Designation': employee.designation,
+            'Department': employee.department,
+            'Work Location': employee.work_location,
+            'Enable Portal Access': employee.enable_portal_access,
+            'Aadhar Card': employee.aadhar_card,
+            'PAN': employee.pan,
+            'Residential Address': employee.residential_address,
+            'PF Account Number': employee.pf_account_number,
+            'Annual CTC': employee.annual_ctc,
+            'Account Holder Name': employee.account_holder_name,
+            'Bank Name': employee.bank_name,
+            'Account Number': employee.account_number,
+            'IFSC': employee.ifsc,
+            'Account Type': employee.account_type,
+            'Total Work Experience': employee.total_work_experience,
+            'DAT Work Experience': employee.dat_work_experience,
+            'Skill Set': employee.skill_set,
+            'Passport Number': employee.passport_number,
+            'Passport Expiry Date': employee.passport_expiry_date,
+            # Add all other fields as necessary
+        }
+
+        df = pd.DataFrame([employee_data])
+
+        # Convert DataFrame to Excel
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=employee_{employee.employee_id}.xlsx'
+        df.to_excel(response, index=False)
+        return response
+    except Employee.DoesNotExist:
+        return HttpResponse("No employee data found for this user", status=404)
+
+
+
+
+def custom_login(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                
+                # Check if "Remember Me" was checked
+                if request.POST.get('remember_me'):
+                    request.session.set_expiry(1209600)  # 2 weeks in seconds
+                else:
+                    request.session.set_expiry(0)  # Browser close will log out the user
+
+                return redirect('user_profile')  # Redirect to employee details page
+            else:
+                messages.error(request, 'Invalid username or password')  # Display error message
+        else:
+            messages.error(request, 'Invalid username or password')  # Display error message
+
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'registration/login.html', {'form': form})
+
+
+
+def user_profile(request):
+    employee = Employee.objects.get(user=request.user)
+    return render(request, 'user_profile.html', {'employee': employee})
+
+def personal_details(request):
+    employee = Employee.objects.get(user=request.user)
+    return render(request, 'personal_details.html', {'employee': employee})
+
+def account_details(request):
+    employee = Employee.objects.get(user=request.user)
+    return render(request, 'account_details.html', {'employee': employee})
+
+def work_experience(request):
+    employee = Employee.objects.get(user=request.user)
+    return render(request, 'work_experience.html', {'employee': employee})
+
+def download_profile(request):
+    employee = Employee.objects.get(user=request.user)
+    # Code to download profile as XLSX
+    return render(request, 'download_profile.html')
+
+class CustomLoginView(LoginView):
+    form_class = CustomLoginForm
+    template_name = 'login.html'
+
+
+6. templates
+
+6.1 templates/registration
+
+6.1.1 templates/registration/login.html
+
+{% load static %}  <!-- Load the static template tag -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dat Cloud Solutions EMS Login</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url();
+            background-color: honeydew;
+            background-repeat: no-repeat;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .login-container h2 {
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .form-check-label {
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .input-group-text {
+            background-color: transparent;
+            border: none;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            border-color: #007bff;
+        }
+
+        .btn-primary {
+            width: 60%;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c2c7;
+            color: #842029;
+            padding: 20px;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .alert-danger strong {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+
+        <img src="{% static 'img/download.jpeg' %}" alt="Google Logo" class="logo">
+
+        
+        <h2 class="text-center">Sign in to DAT EMS</h2>
+
+        <!-- Error Messages -->
+        <!-- {% if messages %}
+            <div class="alert alert-danger" role="alert">
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            </div>
+        {% endif %} -->
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- <div class="form-group">
+                {{ form.username.label_tag }}
+                {{ form.username}}
+            </div> -->
+            <!-- <div class="form-group">
+                {{ form.password.label_tag }}
+                {{ form.password}}
+            </div> -->
+
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                {{ form.username }}  <!-- Form field automatically has attributes set from forms.py -->
+            </div>
+
+            <div class="input-group mb-3">
+                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                {{ form.password }}  <!-- Form field automatically has attributes set from forms.py -->
+            </div>
+            <!-- <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                <label class="form-check-label" for="rememberMe">Remember Me</label>
+            </div> -->
+
+            <!-- {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong><i class="bi bi-exclamation-triangle-fill"></i> Error:</strong> Invalid Login Credentials.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">gdgdg</button>
+            </div>                        
+            {% endif %} -->
+
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+
+         
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
+
+6.1.2 templates/registration/logout.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout</title>
+</head>
+<body>
+    <h2>Logout</h2>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>
+
+
+6.1.3 templates/registration/password_change_done.html
+
+{% extends 'base.html' %}
+
+{% block title %}Password Changed{% endblock %}
+
+{% block content %}
+<div class="alert alert-success" role="alert">
+    Your password has been successfully changed.
+</div>
+{% endblock %}
+
+
+6.1.4 templates/registration/password_change.html
+
+{% extends 'base.html' %}
+
+{% block title %}Change Password{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Change Password</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Change Password</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+6.2 templates/account_details.html
+
+{% extends 'base.html' %}
+
+{% block title %}Account Details{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Account Details</h2>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">Aadhar Number:</dt>
+            <dd class="col-sm-8">{{ employee.aadhar_card }}</dd>
+            <dt class="col-sm-4">PAN Number:</dt>
+            <dd class="col-sm-8">{{ employee.pan }}</dd>
+            <dt class="col-sm-4">PF Account Number:</dt>
+            <dd class="col-sm-8">{{ employee.pf_account_number }}</dd>
+            <dt class="col-sm-4">Account Holder Name:</dt>
+            <dd class="col-sm-8">{{ employee.account_holder_name }}</dd>
+            <dt class="col-sm-4">Bank Name:</dt>
+            <dd class="col-sm-8">{{ employee.bank_name }}</dd>
+            <dt class="col-sm-4">Account Number:</dt>
+            <dd class="col-sm-8">{{ employee.account_number }}</dd>
+            <dt class="col-sm-4">IFSC:</dt>
+            <dd class="col-sm-8">{{ employee.ifsc }}</dd>
+            <dt class="col-sm-4">Account Type:</dt>
+            <dd class="col-sm-8">{{ employee.account_type }}</dd>
+            <dt class="col-sm-4">Passport Number:</dt>
+            <dd class="col-sm-8">{{ employee.passport_number }}</dd>
+            <dt class="col-sm-4">Passport Expiry Date:</dt>
+            <dd class="col-sm-8">{{ employee.passport_expiry_date }}</dd>
+        
+        </dl>
+            
+    </div>
+</div>
+
+<!-- <p><strong>Bank Name:</strong> {{ employee.bank_name }}</p>
+<p><strong>Account Number:</strong> {{ employee.account_number }}</p>
+<p><strong>IFSC Code:</strong> {{ employee.ifsc }}</p>
+Add more fields as needed -->
+{% endblock %}
+
+6.3 templates/base.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Employee Management Service{% endblock %}</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        #wrapper {
+            display: flex;
+            width: 100%;
+        }
+        #sidebar-wrapper {
+            background-color: #343a40;
+            min-width: 250px;
+            height: 100vh;
+            color: white;
+        }
+        .sidebar-heading {
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            background-color: #1411cb;
+        }
+        .list-group-item {
+            background-color: #343a40;
+            color: white;
+        }
+        .list-group-item:hover {
+            background-color: #12e1e8;
+        }
+        #page-content-wrapper {
+            flex: 1;
+            padding: 20px;
+        }
+        .navbar {
+            margin-bottom: 0;
+        }
+
+        /* .logo {
+            width: 100px; /* Adjust size */
+            /* display: block; */
+            /* margin: 0 auto 20px; Centering and spacing */
+        /* } */ */
+
+    </style>
+</head>
+<body>
+    {% if request.user.is_authenticated %}
+    <div id="wrapper">
+        <!-- Sidebar -->
+        
+        <div id="sidebar-wrapper">
+            <img src="{% static 'img/download.jpeg' %}" alt="Google Logo" class="logo">
+
+            <div class="sidebar-heading">
+                Welcome, {{ user.username }}
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'user_profile' %}" class="list-group-item list-group-item-action">User Profile</a>
+                <!-- <a href="{% url 'personal_details' %}" class="list-group-item list-group-item-action">Personal Details</a> -->
+                <a href="{% url 'account_details' %}" class="list-group-item list-group-item-action">Account Details</a>
+                <a href="{% url 'work_experience' %}" class="list-group-item list-group-item-action">Work Experience</a>
+                <a href="{% url 'download_profile' %}" class="list-group-item list-group-item-action">Download Profile</a>
+                
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                <button class="btn btn-primary" id="menu-toggle">Dat Cloud Solutions</button>
+                <div class="collapse navbar-collapse justify-content-end">
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                                {{ user.username }}
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
+                                <div class="dropdown-divider"></div>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">Logout</button>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <div class="container-fluid">
+                {% block content %}
+                <!-- Content for each page -->
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $("#menu-toggle").click(function(e) {
+            e.preventDefault();
+            $("#wrapper").toggleClass("toggled");
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>
+
+6.4 templates/download_profile.html
+
+{% extends 'base.html' %}
+
+{% block title %}Download Profile{% endblock %}
+
+{% block content %}
+<h2>Download Profile</h2>
+<a href="{% url 'download_details' %}" class="btn btn-success">Download Details in Excel</a>
+{% endblock %}
+
+
+6.4 templates/download_profile.html
+
+6.4 templates/download_profile.html
+
+6.4 templates/download_profile.html
+
+6.4 templates/download_profile.html
+

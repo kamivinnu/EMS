@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Personal Details{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Personal Details</h2>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">
+
+            </dt>
+        </dl>
+    </div>
+</div>
+
+<p><strong>Father's Name:</strong> {{ employee.father_name }}</p>
+<p><strong>Date of Birth:</strong> {{ employee.dob }}</p>
+<p><strong>Residential Address:</strong> {{ employee.address }}</p>
+<!-- Add more fields as needed -->
+{% endblock %}

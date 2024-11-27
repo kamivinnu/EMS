@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block title %}Download Profile{% endblock %}
+
+{% block content %}
+<h2>Download Profile</h2>
+<a href="{% url 'download_details' %}" class="btn btn-success">Download Details in Excel</a>
+{% endblock %}

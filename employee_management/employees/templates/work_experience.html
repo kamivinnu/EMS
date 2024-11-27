@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Work Experience{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-header">
+        <h2>Work Experience</h2>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-4">Date of Joining:</dt>
+            <dd class="col-sm-8">{{ employee.date_of_joining }}</dd>
+            <dt class="col-sm-4">Department:</dt>
+            <dd class="col-sm-8">{{ employee.department }}</dd>
+            <dt class="col-sm-4">Annual CTC:</dt>
+            <dd class="col-sm-8">{{ employee.annual_ctc }}</dd>
+            <dt class="col-sm-4">Total Work Experience:</dt>
+            <dd class="col-sm-8">{{ employee.total_work_experience }}</dd>
+            <dt class="col-sm-4">DAT Work Experience:</dt>
+            <dd class="col-sm-8">{{ employee.dat_work_experience }}</dd>
+            <dt class="col-sm-4">Skill Set:</dt>
+            <dd class="col-sm-8">{{ employee.skill_set }}</dd>
+          
+        </dl>
+    </div>
+
+</div>
+
+<!-- <p><strong>Total Experience:</strong> {{ employee.total_work_experience }} years</p>
+<p><strong>DAT Work Experience:</strong> {{ employee.dat_work_experience }} years</p>
+<p><strong>Skill Set:</strong> {{ employee.skill_set }}</p>
+Add more fields as needed -->
+{% endblock %}

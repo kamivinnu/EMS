@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="card-header">
+        <h2>Profile</h2>
+    </div>
+
+    <div class= "card-body">
+        <dl class="row">
+            <dt class="col-sm-4">Employee ID:</dt>
+            <dd class="col-sm-8">{{ employee.employee_id }}</dd>
+            <dt class="col-sm-4">Designation:</dt>
+            <dd class="col-sm-8">{{ employee.designation }}</dd>
+            <dt class="col-sm-4">Email:</dt>
+            <dd class="col-sm-8">{{ employee.work_email }}</dd>
+            <dt class="col-sm-4">Mobile Number:</dt>
+            <dd class="col-sm-8">{{ employee.mobile_number }}</dd>
+            
+            <dt class="col-sm-4">Location:</dt>
+            <dd class="col-sm-8">{{ employee.work_location }}</dd>
+            
+        </dl>
+    </div> 
+    
+    <br>
+
+    <div class="card-header">
+        <h2>Personal Details</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <dt class="col-sm-4">Name:</dt>
+            <dd class="col-sm-8">{{ employee.employee_name }}</dd>
+            <dt class="col-sm-4">First Name:</dt>
+            <dd class="col-sm-8">{{ employee.first_name }}</dd>
+            <dt class="col-sm-4">Last Name:</dt>
+            <dd class="col-sm-8">{{ employee.last_name }}</dd>
+            <dt class="col-sm-4">Email:</dt>
+            <dd class="col-sm-8">{{ employee.personal_email }}</dd>
+            
+            <dt class="col-sm-4">Father's Name:</dt>
+            <dd class="col-sm-8">{{ employee.father_name }}</dd>
+            
+            <dt class="col-sm-4">Mobile Number:</dt>
+            <dd class="col-sm-8">{{ employee.mobile_number }}</dd>
+            <dt class="col-sm-4">Date of Birth:</dt>
+            <dd class="col-sm-8">{{ employee.date_of_birth }}</dd>
+            
+            <dt class="col-sm-4">Residential Address:</dt>
+            <dd class="col-sm-8">{{ employee.residential_address }}</dd>
+            
+        </div>
+    </div>
+</div>
+
+<!-- <p><strong>Employee ID:</strong> {{ employee.employee_id }}</p>
+<p><strong>Name:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+<p><strong>Designation:</strong> {{ employee.designation }}</p>
+<!-- Add more fields as needed -->
+{% endblock %} -->

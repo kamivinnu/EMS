@@ -1,0 +1,47 @@
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="col-md-9">
+    <h2>Holiday Calendar for {{ selected_year }}</h2>
+
+    <!-- Form to filter holidays by year -->
+    <form method="GET" action="{% url 'holidays_calendar' %}">
+        <label for="year">Select Year:</label>
+        <select name="year" id="year" class="form-control" onchange="this.form.submit()">
+            {% for year in available_years %}
+                <option value="{{ year }}" {% if year == selected_year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <table class="table table-bordered mt-4">
+        <thead>
+            <tr>
+                <th>Serial No.</th>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Ocassion</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for holiday in holidays %}
+            <tr>
+                <td>{{ forloop.counter }}</td> <!-- Serial Number -->
+                <td>{{ holiday.date|date:"d-m-Y" }}</td> <!-- Date -->
+                <td>{{ holiday.date|date:"l" }}</td> <!-- Day of the week -->
+                <td>{{ holiday.name }}</td> <!-- Holiday Name -->
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2" class="text-center">No holidays for {{ selected_year }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+</div>
+{% endblock %}
